@@ -223,4 +223,9 @@ export interface AuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
    * Intended for the `?adminLogin=1` sign-in entry used by admins.
    */
   adminLogin?: boolean
+  /**
+   * Slug of the custom OAuth provider to start automatically on
+   * mount, from the `?sso=<slug>` sign-in entry.
+   */
+  sso?: string
 }

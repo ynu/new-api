@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -44,6 +44,13 @@ type OAuthProvidersProps = {
    * providers are the only login method on the page.
    */
   showDivider?: boolean
+  /**
+   * Slug of a custom OAuth provider to start automatically on
+   * mount, from the `?sso=<slug>` sign-in entry. Attempted once
+   * per tab; an IdP-side failure that returns to the sign-in
+   * page stays on the manual buttons instead of looping.
+   */
+  autoStartSlug?: string
 }
 
 type ProviderButton = {
@@ -62,6 +69,7 @@ export function OAuthProviders({
   isWeChatLoading = false,
   redirectTo,
   showDivider = true,
+  autoStartSlug,
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -75,6 +83,34 @@ export function OAuthProviders({
     handleTelegramLogin,
     handleCustomOAuthLogin,
   } = useOAuthLogin(status, redirectTo)
+
+  // Auto-start the named custom provider once the status delivers it.
+  // The one-shot marker is written only when the provider is actually
+  // found and fired, so a slow /api/status response does not suppress
+  // the jump while an IdP failure that lands back here stays manual.
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (!autoStartSlug || autoStarted.current) return
+    let attempted = false
+    try {
+      attempted =
+        window.sessionStorage.getItem('sso_auto_start_attempted') === '1'
+    } catch {
+      attempted = false
+    }
+    if (attempted) return
+    const provider = status?.custom_oauth_providers?.find(
+      (candidate) => candidate.slug === autoStartSlug
+    )
+    if (!provider) return
+    autoStarted.current = true
+    try {
+      window.sessionStorage.setItem('sso_auto_start_attempted', '1')
+    } catch {
+      // Best-effort marker; the ref still guards within this mount.
+    }
+    void handleCustomOAuthLogin(provider)
+  }, [autoStartSlug, status, handleCustomOAuthLogin])
 
   const providerButtons: ProviderButton[] = []
 

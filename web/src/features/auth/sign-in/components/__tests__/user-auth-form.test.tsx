@@ -16,6 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from '@tanstack/react-router'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -35,6 +43,8 @@ vi.mock('@/features/auth/hooks/use-auth-redirect', () => ({
   }),
 }))
 
+const handleCustomOAuthLogin = vi.fn()
+
 vi.mock('@/features/auth/hooks/use-oauth-login', () => ({
   useOAuthLogin: () => ({
     isLoading: false,
@@ -45,7 +55,7 @@ vi.mock('@/features/auth/hooks/use-oauth-login', () => ({
     handleOIDCLogin: vi.fn(),
     handleLinuxDOLogin: vi.fn(),
     handleTelegramLogin: vi.fn(),
-    handleCustomOAuthLogin: vi.fn(),
+    handleCustomOAuthLogin,
   }),
 }))
 
@@ -67,33 +77,58 @@ function mockStatus(status: SystemStatus | null) {
   })
 }
 
+/**
+ * The password form contains a react-router `<Link>`
+ * (forgot password), which requires a router context.
+ */
+function renderWithRouter(ui: React.ReactElement) {
+  const root = createRootRoute({ component: Outlet })
+  const router = createRouter({
+    routeTree: root.addChildren([
+      createRoute({
+        getParentRoute: () => root,
+        path: '/sign-in',
+        component: () => ui,
+      }),
+      createRoute({
+        getParentRoute: () => root,
+        path: '/forgot-password',
+        component: () => null,
+      }),
+    ]),
+    history: createMemoryHistory({ initialEntries: ['/sign-in'] }),
+  })
+  return render(<RouterProvider router={router} />)
+}
+
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  window.sessionStorage.clear()
 })
 
 describe('UserAuthForm SSO-only mode', () => {
-  it('hides the password form by default and shows SSO providers', () => {
+  it('hides the password form by default and shows SSO providers', async () => {
     mockStatus(statusWithSsoAndPassword)
-    render(<UserAuthForm />)
+    renderWithRouter(<UserAuthForm />)
 
+    expect(
+      await screen.findByRole('button', { name: 'Continue with OIDC' })
+    ).toBeVisible()
     expect(
       screen.queryByLabelText('Username or Email')
     ).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Continue with OIDC' })
-    ).toBeVisible()
     // No password form means the "Or continue with" divider is noise.
     expect(screen.queryByText('Or continue with')).not.toBeInTheDocument()
   })
 
-  it('shows the password form alongside SSO when adminLogin is set', () => {
+  it('shows the password form alongside SSO when adminLogin is set', async () => {
     mockStatus(statusWithSsoAndPassword)
-    render(<UserAuthForm adminLogin />)
+    renderWithRouter(<UserAuthForm adminLogin />)
 
     expect(
-      screen.getByLabelText('Username or Email')
+      await screen.findByLabelText('Username or Email')
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(
@@ -102,15 +137,15 @@ describe('UserAuthForm SSO-only mode', () => {
     expect(screen.getByText('Or continue with')).toBeInTheDocument()
   })
 
-  it('keeps the password form hidden when the server disables password login even with adminLogin', () => {
+  it('keeps the password form hidden when the server disables password login even with adminLogin', async () => {
     mockStatus(statusWithSsoOnly)
-    render(<UserAuthForm adminLogin />)
+    renderWithRouter(<UserAuthForm adminLogin />)
 
+    expect(
+      await screen.findByRole('button', { name: 'Continue with OIDC' })
+    ).toBeVisible()
     expect(
       screen.queryByLabelText('Username or Email')
     ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Continue with OIDC' })
-    ).toBeVisible()
   })
 })

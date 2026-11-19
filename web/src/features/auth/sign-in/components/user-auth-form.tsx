@@ -64,6 +64,7 @@ export function UserAuthForm({
   className,
   redirectTo,
   adminLogin = false,
+  sso,
   ...props
 }: AuthFormProps) {
   const { t } = useTranslation()
@@ -341,6 +342,7 @@ export function UserAuthForm({
         onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
         isWeChatLoading={isWeChatSubmitting}
         showDivider={passwordLoginEnabled}
+        autoStartSlug={adminLogin ? undefined : sso}
       />
     </>
   )

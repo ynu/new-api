@@ -27,7 +27,9 @@ import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
   const { t } = useTranslation()
-  const { redirect, adminLogin } = useSearch({ from: '/(auth)/sign-in' })
+  const { redirect, adminLogin, sso } = useSearch({
+    from: '/(auth)/sign-in',
+  })
   const { status } = useStatus()
 
   return (
@@ -55,6 +57,7 @@ export function SignIn() {
         <UserAuthForm
           redirectTo={redirect}
           adminLogin={adminLogin === true}
+          sso={sso}
         />
 
         <TermsFooter

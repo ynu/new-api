@@ -34,6 +34,8 @@ const adminLoginSearch = z.preprocess((value) => {
 const searchSchema = z.object({
   redirect: z.string().optional(),
   adminLogin: adminLoginSearch.optional(),
+  /** Slug of a custom OAuth provider to start automatically. */
+  sso: z.string().optional(),
 })
 
 export const Route = createFileRoute('/(auth)/sign-in')({
