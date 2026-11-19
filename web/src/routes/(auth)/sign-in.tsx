@@ -24,8 +24,16 @@ import { SignIn } from '@/features/auth/sign-in'
 import { resolveAuthentication } from '@/lib/auth-session'
 import { useAuthStore } from '@/stores/auth-store'
 
+// `?adminLogin=1` restores the original password login. TanStack Router
+// JSON-parses search values, so the raw param may arrive as boolean, number
+// or string depending on how the URL was written.
+const adminLoginSearch = z.preprocess((value) => {
+  return value === true || value === 1 || value === '1' || value === 'true'
+}, z.boolean())
+
 const searchSchema = z.object({
   redirect: z.string().optional(),
+  adminLogin: adminLoginSearch.optional(),
 })
 
 export const Route = createFileRoute('/(auth)/sign-in')({

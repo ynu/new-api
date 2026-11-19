@@ -63,6 +63,7 @@ import { cn } from '@/lib/utils'
 export function UserAuthForm({
   className,
   redirectTo,
+  adminLogin = false,
   ...props
 }: AuthFormProps) {
   const { t } = useTranslation()
@@ -88,6 +89,7 @@ export function UserAuthForm({
     status?.passkey_login ?? status?.data?.passkey_login
   )
   const passwordLoginEnabled =
+    adminLogin &&
     (status?.password_login_enabled ??
       status?.data?.password_login_enabled ??
       true) !== false
@@ -338,6 +340,7 @@ export function UserAuthForm({
         disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
         onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
         isWeChatLoading={isWeChatSubmitting}
+        showDivider={passwordLoginEnabled}
       />
     </>
   )

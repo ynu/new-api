@@ -218,4 +218,9 @@ export interface CustomOAuthProviderInfo {
 
 export interface AuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
   redirectTo?: string
+  /**
+   * Show the original username/password form in addition to SSO.
+   * Intended for the `?adminLogin=1` sign-in entry used by admins.
+   */
+  adminLogin?: boolean
 }
